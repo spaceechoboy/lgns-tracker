@@ -286,5 +286,6 @@ setInterval(tickRebase,1000);
 go();
 setTimeout(mountCharts,800);
 </script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script>
 </body>
 </html>

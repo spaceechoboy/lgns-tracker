@@ -52,6 +52,9 @@ body{min-height:100vh;background:radial-gradient(ellipse 1200px 600px at 50% -20
 .badge-premium{display:inline-flex;align-items:center;gap:5px;font:700 13px/1 var(--mono);padding:5px 11px;border-radius:100px;border:1px solid var(--border-strong)}
 .badge-premium.up{color:var(--neon);background:rgba(159,232,112,.10)}
 .badge-premium.down{color:var(--danger);background:rgba(255,107,107,.10)}
+.tax-badge{display:inline-flex;align-items:center;font:700 12px/1 var(--mono);padding:4px 9px;border-radius:100px;border:1px solid var(--border-strong);white-space:nowrap;color:var(--text-dim)}
+.tax-badge.lo{color:var(--warn);background:rgba(255,184,77,.10);border-color:rgba(255,184,77,.35)}
+.tax-badge.hi{color:var(--danger);background:rgba(255,107,107,.12);border-color:rgba(255,107,107,.4)}
 .bvl{font-size:11px;color:var(--text-faint)}
 .bv{font-family:var(--mono);font-size:24px;font-weight:800}
 .rw{display:flex;justify-content:space-between;padding:4px 0}
@@ -146,7 +149,7 @@ tr:hover td{background:rgba(159,232,112,.03)}
   <div class="g2">
     <div class="price-hero" style="margin-bottom:0">
       <div class="hero-tag">⬡ Polygon · LGNS / USD</div>
-      <div class="pm"><div class="pv" id="polyP">—</div><div><span class="pc" id="polyC">—</span> <span style="font-size:11px;color:var(--text-faint)">24h</span></div></div>
+      <div class="pm"><div class="pv" id="polyP">—</div><div><span class="pc" id="polyC">—</span> <span style="font-size:11px;color:var(--text-faint)">24h</span></div><span class="tax-badge" id="polyTax">매도세 —</span></div>
       <div class="pmt">
         <div class="mi"><div class="ml">LGNS 풀</div><div class="mv" id="polyPoolL">—</div></div>
         <div class="mi"><div class="ml">DAI 풀</div><div class="mv" id="polyPoolD">—</div></div>
@@ -154,7 +157,7 @@ tr:hover td{background:rgba(159,232,112,.03)}
     </div>
     <div class="price-hero" style="margin-bottom:0">
       <div class="hero-tag">𓁢 Anubis · LGNS / USD</div>
-      <div class="pm"><div class="pv" id="anuP">—</div><span class="badge-premium" id="prem">—</span></div>
+      <div class="pm"><div class="pv" id="anuP">—</div><span class="badge-premium" id="prem">—</span><span class="tax-badge" id="anuTax">매도세 —</span></div>
       <div class="pmt">
         <div class="mi"><div class="ml">LGNS 풀</div><div class="mv" id="anuR0">—</div></div>
         <div class="mi"><div class="ml">DAI 풀</div><div class="mv" id="anuR1">—</div></div>
@@ -304,6 +307,7 @@ const POLY_LGNS="0xeB51D9A39AD5EEF215dC0Bf39a8821ff804A0F01";
 const POLY_POOL="0x882df4B0fB50a229C3B4124EB18c759911485bFb";
 const ANU_RPC="https://rpc.anubispace.org";
 const ANU_POOL="0x32A4586797E3f561F41C0F47CA57eD08D64f3dC0";
+const ANU_LGNS="0x4D1D808a081FdAc440703b3765FC61f8028C06B8";
 const ANU_BS="https://browser.anubispace.org/api/v2";
 const A={
   dex:`https://api.dexscreener.com/tokens/v1/polygon/${POLY_LGNS}`,
@@ -416,9 +420,28 @@ async function go(){
   S.cd=30;if(b){b.disabled=false;b.textContent='🔄 새로고침';}if($('lastU'))$('lastU').textContent=new Date().toLocaleTimeString('ko-KR');
   uD();uP();uStk();
   fetchRebase().then(renderRebase).catch(function(){});
+  fetchSellTax().then(renderTax).catch(function(){});
 }
 
 // ─── charts ───
+// ── 매도세금(sell tax) 라이브 read: 1−(1−feeRatio)(1−extraFeeRatio), 분모 1e5 ──
+async function readTaxRatios(rpcs, token){
+  for(const url of rpcs){
+    try{
+      const fee=BigInt(await polyRpc(url,'eth_call',[{to:token,data:'0x41744dd4'},'latest'])); // feeRatio()
+      let xf=0n; try{const x=await polyRpc(url,'eth_call',[{to:token,data:'0x3c336ff4'},'latest']); if(x&&x!=='0x') xf=BigInt(x);}catch(e){}
+      return {fee:Number(fee)/1e5, xf:Number(xf)/1e5};
+    }catch(e){}
+  }
+  return null;
+}
+async function fetchSellTax(){
+  try{const p=await readTaxRatios(POLY_RPC,POLY_LGNS); if(p)S.poly.sellTax=(1-(1-p.fee)*(1-p.xf))*100;}catch(e){}
+  try{const a=await readTaxRatios([ANU_RPC],ANU_LGNS); if(a)S.anu.sellTax=(1-(1-a.fee)*(1-a.xf))*100;}catch(e){}
+}
+function setTax(id,t){const el=$(id);if(!el)return;if(t==null){el.textContent='매도세 —';el.className='tax-badge';return;}el.textContent='매도세 '+fN(t,2)+'%';el.className='tax-badge '+(t>=15?'hi':'lo');}
+function renderTax(){setTax('polyTax',S.poly.sellTax);setTax('anuTax',S.anu.sellTax);}
+
 let chartsMounted=false;
 const POLY_DEXT="https://www.dextools.io/widget-chart/en/polygon/pe-light/0x882df4b0fb50a229c3b4124eb18c759911485bfb?theme=dark&chartType=1&chartResolution=1&drawingToolbars=false";
 const ANU_DEXT="https://www.dextools.io/widget-chart/en/anubis/pe-light/0x32a4586797e3f561f41c0f47ca57ed08d64f3dc0?theme=dark&chartType=1&chartResolution=1&drawingToolbars=false";
@@ -449,6 +472,7 @@ function uD(){
   $('LkPoly').textContent=S.poly.price&&S.fx.live?fW(S.poly.price*S.fx.live):'—';
   $('LkAnu').textContent=S.anu.price&&S.fx.live?fW(S.anu.price*S.fx.live):'—';
   sC('btc',S.btc);sC('eth',S.eth);sC('pol',S.pol);
+  renderTax();
 }
 function sC(id,d){if(!d)return;$(id+'U').textContent=d.u?f$(d.u,d.u>=100?0:2):'—';const c=$(id+'C');c.textContent=fP(d.ch);c.style.color=fC(d.ch);
   $(id+'K').textContent=d.k?fW(d.k):'—';$(id+'Up').textContent=d.up?'업비트 '+fW(d.up):'업비트 —';}

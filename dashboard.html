@@ -71,10 +71,23 @@ body{background:var(--bg-0);color:var(--text);font-family:'Pretendard','Apple SD
 .kv .krw-sm{font-size:10px;color:var(--text-faint);font-weight:400;margin-left:5px}
 .bc-foot{font-size:10px;color:var(--text-faint);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-@media(max-aspect-ratio:13/10){
-  /* 세로로 긴 창: 본문 1열, 하단 2열 — 그래도 한 화면 시도 */
-  .main{grid-template-columns:1fr;grid-auto-rows:1fr}
+/* ── 모바일/세로/짧은 화면: 자동회전 대응 — 스크롤 허용 + 세로 스택 + 편안한 크기 ── */
+@media (max-width:920px), (orientation:portrait){
+  html,body{overflow:auto}
+  .dash{height:auto;min-height:100dvh;padding:10px;gap:10px}
+  .topbar{flex-wrap:wrap;gap:10px}
+  .rebase-box{flex:1 1 auto}
+  .main{grid-template-columns:1fr}
+  .chain{min-height:0}
+  .chart-card{flex:0 0 auto;height:44vh;min-height:300px;max-height:460px}
+  .price-strip{flex-wrap:wrap;gap:8px}
+  .ps-right{gap:14px}
   .bottom{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:520px){
+  .bottom{grid-template-columns:1fr}
+  .pv{font-size:30px}
+  .rb-val{font-size:18px}
 }
 </style>
 <link rel="manifest" href="dashboard.webmanifest">

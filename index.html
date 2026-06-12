@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Origin LGNS Dual-Chain Tracker</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.18/index.min.css">
+<!-- 차트는 DexTools 위젯 임베드 — Lightweight-Charts 불필요 -->
+<style>
+/* ANUBIS NEON — 99_Meta/templates/anubis-neon.css 와 1:1 동기화 (vault 정착본 참조) */
+:root{
+  --bg-0:#050805; --bg-1:#0a1109; --bg-2:#0f1a0e;
+  --bg-card:#0e1610; --bg-card-2:#121f12;
+  --border:rgba(159,232,112,.18); --border-strong:rgba(159,232,112,.35);
+  --neon:#9FE870; --neon-bright:#B5FF7D; --neon-dim:#6BB048;
+  --text:#E8F5E0; --text-dim:#9CA89A; --text-faint:#6B7569;
+  --danger:#FF6B6B; --warn:#FFB84D; --note:#6BB048;
+  --gold:#E8C547; --info:#7FD4E8;
+  --shadow-neon:0 0 40px rgba(159,232,112,.12);
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:var(--bg-0);color:var(--text);font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;letter-spacing:-0.01em}
+body{min-height:100vh;background:radial-gradient(ellipse 1200px 600px at 50% -200px,rgba(159,232,112,.08),transparent),radial-gradient(ellipse 800px 400px at 100% 50%,rgba(159,232,112,.03),transparent),var(--bg-0)}
+.hd{position:sticky;top:0;z-index:100;background:rgba(5,8,5,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 0 0}
+.hdi{max-width:980px;margin:0 auto;padding:0 24px}
+.hdt{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding-bottom:12px}
+.logo-wrap{display:flex;align-items:center;gap:10px}
+.logo{font-size:20px;font-weight:900;color:var(--neon);text-shadow:0 0 24px rgba(159,232,112,.4)}
+.sts{font-size:11px;color:var(--text-faint);margin-top:2px}
+.tabs{display:flex;gap:2px;overflow-x:auto}
+.tab{padding:9px 18px;border:none;background:0 0;color:var(--text-faint);font-weight:400;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;border-radius:8px 8px 0 0;font-family:inherit;transition:.2s;white-space:nowrap}
+.tab:hover{color:var(--text-dim)}
+.tab.on{background:var(--bg-card-2);color:var(--neon);font-weight:700;border-bottom-color:var(--neon)}
+.wrap{max-width:980px;margin:0 auto;padding:16px 24px 80px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.card,.cd{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:.2s;margin-bottom:12px}
+.card:hover,.cd:hover{border-color:var(--border-strong)}
+.card-head,.ch{padding:10px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,rgba(159,232,112,.05),transparent 70%)}
+.card-title,.ct2{font-size:13px;font-weight:700;color:var(--text-dim)}
+.card-sub,.cs{font-size:10px;color:var(--text-faint)}
+.card-body,.cb{padding:16px 18px}
+.price-hero,.ph{background:var(--bg-card);border-radius:16px;padding:22px 26px;margin-bottom:12px;border:1px solid var(--border);background-image:linear-gradient(135deg,rgba(159,232,112,.05),transparent 60%);position:relative;overflow:hidden}
+.hero-tag{font-size:12px;color:var(--text-dim);letter-spacing:.04em;margin-bottom:6px}
+.pm{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.pv{font-family:var(--mono);font-size:36px;font-weight:900;color:#fff;line-height:1;text-shadow:0 0 24px rgba(159,232,112,.25)}
+.pc{font-size:15px;font-weight:700}
+.pmt{display:flex;gap:18px;margin-top:14px;flex-wrap:wrap}
+.mi .ml{font-size:11px;color:var(--text-faint)}.mi .mv{font-size:14px;font-weight:600;color:var(--text)}
+.badge-premium{display:inline-flex;align-items:center;gap:5px;font:700 13px/1 var(--mono);padding:5px 11px;border-radius:100px;border:1px solid var(--border-strong)}
+.badge-premium.up{color:var(--neon);background:rgba(159,232,112,.10)}
+.badge-premium.down{color:var(--danger);background:rgba(255,107,107,.10)}
+.bvl{font-size:11px;color:var(--text-faint)}
+.bv{font-family:var(--mono);font-size:24px;font-weight:800}
+.rw{display:flex;justify-content:space-between;padding:4px 0}
+.rl{font-size:12px;color:var(--text-dim)}
+.rv{font-size:13px;font-weight:600;font-family:var(--mono)}
+.ir{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.ir:last-child{margin-bottom:0}
+.il{font-size:12px;color:var(--text-faint);display:block;margin-bottom:4px}
+.ifl{width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border-strong);background:var(--bg-2);color:var(--neon);font-size:20px;font-weight:700;font-family:var(--mono);transition:.2s}
+.ifl:focus{outline:none;border-color:var(--neon);box-shadow:0 0 0 3px rgba(159,232,112,.12)}
+.ifl::placeholder{color:var(--text-faint);font-weight:400}
+.btn{padding:7px 16px;border-radius:8px;border:1px solid var(--border-strong);background:rgba(5,8,5,.8);color:var(--neon);cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;transition:.2s}
+.btn:hover{background:var(--bg-card-2);border-color:var(--neon)}.btn:disabled{opacity:.5;cursor:default}
+.br{padding:8px 20px;border-radius:8px;border:none;background:var(--neon);color:var(--bg-0);font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;transition:.2s}
+.br:hover{opacity:.85}.br:disabled{background:var(--bg-card-2);color:var(--text-faint);cursor:default;opacity:.5}
+.bc{padding:8px 14px;border-radius:8px;border:1px solid #7f1d1d;background:0 0;color:var(--danger);font-size:13px;cursor:pointer;font-family:inherit}
+.chain-toggle{display:inline-flex;gap:2px;background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:2px}
+.chain-toggle button{padding:5px 12px;border:none;background:0 0;color:var(--text-dim);font:700 12px/1 inherit;border-radius:6px;cursor:pointer;transition:.15s}
+.chain-toggle button.on{background:var(--neon);color:var(--bg-0)}
+.sb{background:var(--bg-card);border-radius:14px;padding:16px 24px;margin-top:12px;margin-bottom:12px;border:1px solid var(--border);display:grid;grid-template-columns:repeat(4,1fr);gap:12px;text-align:center}
+.sl{font-size:11px;color:var(--text-faint)}.svl{font-size:15px;font-weight:700;font-family:var(--mono)}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead tr{background:var(--bg-card-2)}
+th{padding:8px 5px;color:var(--text-faint);font-weight:600;text-align:center;border-bottom:1px solid var(--border);white-space:nowrap;font-size:10px}
+td{padding:7px 5px;text-align:center;border-bottom:1px solid rgba(159,232,112,.05);font-family:var(--mono);font-size:11px}
+tr:hover td{background:rgba(159,232,112,.03)}
+.coin-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(159,232,112,.06)}
+.coin-row:last-child{border-bottom:none}
+.coin-left{display:flex;align-items:center;gap:8px}
+.coin-icon{font-size:20px;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.coin-name{font-size:13px;font-weight:700;color:var(--text)}
+.coin-sym{font-size:10px;color:var(--text-faint);font-weight:400}
+.coin-usd{font-family:var(--mono);font-size:14px;font-weight:700;color:#fff}
+.coin-krw{font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-top:1px}
+.coin-chg{font-family:var(--mono);font-size:11px;font-weight:600;margin-top:1px}
+.chart-wrap{height:260px;border-radius:0 0 14px 14px;overflow:hidden}
+.spark-wrap{height:110px;border-radius:0 0 14px 14px;overflow:hidden}
+.chart-empty{height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-faint);font-size:12px}
+.calc-result{background:var(--bg-card-2);border-radius:12px;padding:20px;text-align:center;margin-top:16px;border:1px solid var(--border)}
+.calc-big{font-family:var(--mono);font-size:30px;font-weight:900;color:var(--neon);text-shadow:0 0 20px rgba(159,232,112,.3)}
+.tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:600;margin-left:4px}
+.tag-live{background:rgba(159,232,112,.15);color:var(--neon)}
+.pulse{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--neon);animation:pulse 2s ease-in-out infinite;margin-right:5px;box-shadow:0 0 8px var(--neon)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.hint{font-size:11px;color:var(--text-faint);margin-top:6px}.hid{display:none}
+.mono{font-family:var(--mono)}.fw7{font-weight:700}
+.cg{color:var(--neon)}.cr{color:var(--danger)}.co{color:var(--warn)}.cgl{color:var(--gold)}.ca{color:var(--neon-bright)}.cdm{color:var(--text-dim)}
+.hd-right{display:flex;align-items:center;gap:14px}
+.rebase-box{display:flex;flex-direction:column;gap:7px;padding:11px 16px;border:1px solid var(--border-strong);border-radius:12px;background:rgba(159,232,112,.06);box-shadow:0 0 24px rgba(159,232,112,.06)}
+.rb-item{display:flex;align-items:baseline;justify-content:space-between;gap:24px}
+.rb-lab{font-size:12.5px;font-weight:600;color:var(--text-dim);white-space:nowrap}
+.rb-val{font-family:var(--mono);font-weight:800;font-size:21px;font-variant-numeric:tabular-nums;line-height:1.15;white-space:nowrap}
+.rb-val.cd{color:var(--info);text-shadow:0 0 14px rgba(127,212,232,.3)}
+.rb-val.rate{color:var(--neon);text-shadow:0 0 16px rgba(159,232,112,.4)}
+@media(max-width:640px){.g2{grid-template-columns:1fr}.sb{grid-template-columns:repeat(2,1fr)}.pv{font-size:28px}.calc-big{font-size:24px}.wrap{padding:12px 14px 64px}.hdi{padding:0 14px}.hd-right{width:100%}.rebase-box{flex:1}}
+</style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#050805">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LGNS Tracker">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+</head>
+<body>
+<div class="hd"><div class="hdi">
+  <div class="hdt">
+    <div>
+      <div class="logo-wrap"><div class="logo">𓁢 LGNS Dual-Chain</div></div>
+      <div class="sts"><span class="pulse"></span>Polygon · Anubis · 업비트 · 빗썸 · CoinGecko · 30초 · <span style="color:var(--neon)" id="lastU">로딩중...</span> <span style="color:var(--neon)" id="cd"></span></div>
+    </div>
+    <div class="hd-right">
+      <div class="rebase-box">
+        <div class="rb-item"><span class="rb-lab">다음 리베이스까지</span><span class="rb-val cd" id="rbCd">—</span></div>
+        <div class="rb-item"><span class="rb-lab">리베이스 / 에폭</span><span class="rb-val rate" id="rbRate">—</span></div>
+      </div>
+      <button class="btn" id="btnR" onclick="go()">🔄</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab on" data-t="s" onclick="sw('s')">📊 시세</button>
+    <button class="tab" data-t="a" onclick="sw('a')">💰 자산</button>
+    <button class="tab" data-t="r" onclick="sw('r')">📒 기록</button>
+    <button class="tab" data-t="c" onclick="sw('c')">🧮 계산기</button>
+  </div>
+</div></div>
+
+<div class="wrap">
+<!-- ═══ 시세 ═══ -->
+<div id="t-s">
+  <div class="g2">
+    <div class="price-hero" style="margin-bottom:0">
+      <div class="hero-tag">⬡ Polygon · LGNS / USD</div>
+      <div class="pm"><div class="pv" id="polyP">—</div><div><span class="pc" id="polyC">—</span> <span style="font-size:11px;color:var(--text-faint)">24h</span></div></div>
+      <div class="pmt">
+        <div class="mi"><div class="ml">LGNS 풀</div><div class="mv" id="polyPoolL">—</div></div>
+        <div class="mi"><div class="ml">DAI 풀</div><div class="mv" id="polyPoolD">—</div></div>
+      </div>
+    </div>
+    <div class="price-hero" style="margin-bottom:0">
+      <div class="hero-tag">𓁢 Anubis · LGNS / USD</div>
+      <div class="pm"><div class="pv" id="anuP">—</div><span class="badge-premium" id="prem">—</span></div>
+      <div class="pmt">
+        <div class="mi"><div class="ml">LGNS 풀</div><div class="mv" id="anuR0">—</div></div>
+        <div class="mi"><div class="ml">DAI 풀</div><div class="mv" id="anuR1">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card" style="margin-bottom:0"><div class="card-head"><span class="card-title">📈 Polygon LGNS 차트</span><span class="card-sub">DexTools · QuickSwap</span></div>
+      <div class="chart-wrap" id="polyChart" style="height:44vh;min-height:300px;max-height:500px"><div class="chart-empty">차트 로딩중…</div></div>
+    </div>
+    <div class="card" style="margin-bottom:0"><div class="card-head"><span class="card-title">📈 Anubis LGNS 차트</span><span class="card-sub">DexTools · RocketSwap</span></div>
+      <div class="chart-wrap" id="anuChart" style="height:44vh;min-height:300px;max-height:500px"><div class="chart-empty">차트 로딩중…</div></div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="card" style="margin-bottom:0"><div class="card-head"><span class="card-title">💱 USD/KRW</span><span class="card-sub">다중 소스</span></div>
+      <div class="card-body">
+        <div class="ir"><span class="rl">🟢 실시간 체감환율 <span class="tag tag-live">LIVE</span></span><span class="fw7 mono cgl" style="font-size:20px" id="fxL">—</span></div>
+        <div class="hint" style="margin:-4px 0 8px 0">= 업비트 USDT/KRW</div>
+        <div class="ir"><span class="rl">📋 공시 기준환율</span><span class="fw7 mono cdm" style="font-size:14px" id="fxO">—</span></div>
+        <div class="hint" style="margin-top:2px" id="fxSrcEl">소스 확인 중...</div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0"><div class="card-head"><span class="card-title">💵 스테이블코인 / KRW</span><span class="card-sub"><span class="pulse" style="width:6px;height:6px"></span>업비트·빗썸·CoinGecko</span></div>
+      <div class="card-body">
+        <div class="ir"><span class="rl">🟢 업비트 USDT</span><span class="fw7 mono cgl" style="font-size:16px" id="uU">—</span></div>
+        <div class="ir"><span class="rl">🟠 빗썸 USDT</span><span class="fw7 mono co" style="font-size:16px" id="uB">—</span></div>
+        <div class="ir"><span class="rl">🔵 업비트 USDC</span><span class="fw7 mono" style="font-size:14px;color:var(--text)" id="uC">—</span></div>
+        <div class="ir"><span class="rl">🌐 글로벌</span><span class="fw7 mono cdm" style="font-size:13px" id="uG">—</span></div>
+        <div style="border-top:1px solid var(--border);margin:6px 0;padding-top:6px">
+          <div class="ir"><span class="rl">📊 김프</span><span class="fw7 mono" style="font-size:14px" id="KP">—</span></div>
+          <div class="ir"><span class="rl">업비트↔빗썸</span><span class="fw7 mono" style="font-size:12px" id="UB">—</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0"><div class="card-head"><span class="card-title">🔄 LGNS 원화 (체인별)</span><span class="card-sub">업비트 기준</span></div>
+      <div class="card-body">
+        <div class="ir"><span class="rl">⬡ Polygon</span><span class="fw7 mono cg" style="font-size:17px" id="LkPoly">—</span></div>
+        <div class="ir"><span class="rl">𓁢 Anubis</span><span class="fw7 mono ca" style="font-size:17px" id="LkAnu">—</span></div>
+        <div class="hint" id="gapHint">체인 간 가격차 반영</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px"><div class="card-head"><span class="card-title">📈 메이저 코인</span><span class="card-sub"><span class="pulse" style="width:6px;height:6px"></span>CoinGecko · 업비트</span></div>
+    <div class="card-body" style="padding:10px 18px">
+      <div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:#f7931a22;color:#f7931a">₿</div><div><div class="coin-name">Bitcoin <span class="coin-sym">BTC</span></div></div></div><div style="text-align:center"><div class="coin-usd" id="btcU">—</div><div class="coin-chg" id="btcC">—</div></div><div style="text-align:right"><div class="coin-krw" style="font-size:13px;color:var(--gold)" id="btcK">—</div><div class="coin-krw" id="btcUp">업비트 —</div></div></div>
+      <div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:#627eea22;color:#627eea">Ξ</div><div><div class="coin-name">Ethereum <span class="coin-sym">ETH</span></div></div></div><div style="text-align:center"><div class="coin-usd" id="ethU">—</div><div class="coin-chg" id="ethC">—</div></div><div style="text-align:right"><div class="coin-krw" style="font-size:13px;color:var(--gold)" id="ethK">—</div><div class="coin-krw" id="ethUp">업비트 —</div></div></div>
+      <div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:#8247e522;color:#8247e5">⬡</div><div><div class="coin-name">Polygon <span class="coin-sym">POL</span></div></div></div><div style="text-align:center"><div class="coin-usd" id="polU">—</div><div class="coin-chg" id="polC">—</div></div><div style="text-align:right"><div class="coin-krw" style="font-size:13px;color:var(--gold)" id="polK">—</div><div class="coin-krw" id="polUp">업비트 —</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 자산 ═══ -->
+<div id="t-a" class="hid">
+  <div class="card"><div class="card-head"><span class="card-title">📝 보유 정보 (체인별)</span></div>
+    <div class="card-body"><div class="g2">
+      <div>
+        <div style="font-size:12px;color:var(--neon);font-weight:700;margin-bottom:8px">⬡ Polygon</div>
+        <label class="il">보유 LGNS</label><input type="number" class="ifl" id="iH_poly" placeholder="0" oninput="uP()">
+        <label class="il" style="margin-top:8px">평균 매수가 (USD)</label><input type="number" class="ifl" id="iA_poly" placeholder="0.00" step="0.01" oninput="uP()">
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--neon);font-weight:700;margin-bottom:8px">𓁢 Anubis</div>
+        <label class="il">보유 LGNS</label><input type="number" class="ifl" id="iH_anu" placeholder="0" oninput="uP()">
+        <label class="il" style="margin-top:8px">평균 매수가 (USD)</label><input type="number" class="ifl" id="iA_anu" placeholder="0.00" step="0.01" oninput="uP()">
+      </div>
+    </div><div class="hint">💡 자동 저장 · 각 체인 가격으로 평가 (가격차 ~21% 반영)</div></div>
+  </div>
+  <div class="sb">
+    <div><div class="sl">합산 USD</div><div class="svl cg" id="totU">$0</div></div>
+    <div><div class="sl">합산 KRW</div><div class="svl cg" id="totK">₩0</div></div>
+    <div><div class="sl">총 손익</div><div class="svl" id="totPnl">$0</div></div>
+    <div><div class="sl">총 수익률</div><div class="svl" id="totPct">0%</div></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-head"><span class="card-title">⬡ Polygon</span></div><div class="card-body">
+      <div class="rw"><span class="rl">보유 수량</span><span class="rv" id="hPoly">0</span></div>
+      <div class="rw"><span class="rl">평가 USD</span><span class="rv cg" id="vPoly">$0</span></div>
+      <div class="rw"><span class="rl">손익</span><span class="rv" id="pPoly">$0</span></div>
+      <div class="rw"><span class="rl">수익률</span><span class="rv" id="rPoly">0%</span></div>
+    </div></div>
+    <div class="card"><div class="card-head"><span class="card-title">𓁢 Anubis</span></div><div class="card-body">
+      <div class="rw"><span class="rl">보유 수량</span><span class="rv" id="hAnu">0</span></div>
+      <div class="rw"><span class="rl">평가 USD</span><span class="rv ca" id="vAnu">$0</span></div>
+      <div class="rw"><span class="rl">손익</span><span class="rv" id="pAnu">$0</span></div>
+      <div class="rw"><span class="rl">수익률</span><span class="rv" id="rAnu">0%</span></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- ═══ 기록 ═══ -->
+<div id="t-r" class="hid">
+  <div class="card"><div class="card-head"><span class="card-title">🔒 스테이킹 추적 (Polygon 기준)</span></div>
+    <div class="card-body"><div class="g2">
+      <div><label class="il">스테이킹 시작 LGNS 수량</label><input type="number" class="ifl" id="stkQ" placeholder="0" style="font-size:16px" onchange="sStk()"></div>
+      <div><label class="il">당시 투자 원화 (₩)</label><input type="number" class="ifl" id="stkW" placeholder="0" style="font-size:16px" onchange="sStk()"></div>
+    </div>
+    <div id="stkRes" style="margin-top:12px"></div>
+    <div class="hint">💡 자동 저장 · Polygon 보유량 대비 토큰 증가율</div></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-size:13px;color:var(--text-dim)">총 <span id="lC">0</span>건</div>
+    <div style="display:flex;gap:8px"><button class="br" id="bRc" onclick="rec()">📝 양쪽 시세 기록</button><button class="bc hid" id="bCl" onclick="clr()">🗑 초기화</button></div>
+  </div>
+  <div class="card"><div style="overflow-x:auto"><table>
+    <thead><tr><th>#</th><th>날짜</th><th>체인</th><th>LGNS($)</th><th>환율</th><th>수량</th><th>USD</th><th>KRW</th></tr></thead>
+    <tbody id="lB"><tr><td colspan="8" style="padding:40px;text-align:center;color:var(--text-faint)">아직 기록이 없습니다.</td></tr></tbody>
+  </table></div></div>
+</div>
+
+<!-- ═══ 계산기 ═══ -->
+<div id="t-c" class="hid">
+  <div class="card"><div class="card-head"><span class="card-title">🧮 원화 → LGNS 계산기</span>
+    <span class="chain-toggle"><button id="cc_poly" class="on" onclick="setCalcChain('poly')">⬡ Polygon</button><button id="cc_anu" onclick="setCalcChain('anu')">𓁢 Anubis</button></span></div>
+    <div class="card-body">
+      <label class="il">투자할 원화 금액 (₩)</label>
+      <input type="number" class="ifl" id="calcW" placeholder="1,000,000" oninput="doCalc()">
+      <div class="calc-result">
+        <div class="bvl">구매 가능 LGNS 수량</div>
+        <div class="calc-big" id="calcR">— LGNS</div>
+        <div style="margin-top:12px;font-size:12px;color:var(--text-dim)">
+          <div>적용 환율: <span class="mono" id="calcFx">—</span> (업비트 USDT)</div>
+          <div>LGNS 단가: <span class="mono" id="calcP">—</span></div>
+          <div style="margin-top:6px;color:var(--text-faint)" id="calcT"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const S={
+  poly:{price:null,ch24:null,vol:null,liq:null,fdv:null,poolDai:null},
+  anu:{price:null,reserve0:null,reserve1:null,native:null,ts:null,history:[]},
+  fx:{live:null,off:null,src:''},
+  uGl:null,uUpC:null,uBi:null,
+  btc:{u:null,k:null,up:null,ch:null},eth:{u:null,k:null,up:null,ch:null},pol:{u:null,k:null,up:null,ch:null},
+  rebase:{rate:null,secondsLeft:null,builtAt:null,blocktime:null,distribute:null,staked:null,endBlock:null,block:null},
+  assets:{poly:{hold:0,avg:0},anu:{hold:0,avg:0}},
+  stkQ:0,stkW:0,ledger:[],cd:30
+};
+const POLY_LGNS="0xeB51D9A39AD5EEF215dC0Bf39a8821ff804A0F01";
+const POLY_POOL="0x882df4B0fB50a229C3B4124EB18c759911485bFb";
+const ANU_RPC="https://rpc.anubispace.org";
+const ANU_POOL="0x32A4586797E3f561F41C0F47CA57eD08D64f3dC0";
+const ANU_BS="https://browser.anubispace.org/api/v2";
+const A={
+  dex:`https://api.dexscreener.com/tokens/v1/polygon/${POLY_LGNS}`,
+  gtOhlcv:`https://api.geckoterminal.com/api/v2/networks/polygon_pos/pools/${POLY_POOL.toLowerCase()}/ohlcv/hour?aggregate=1&limit=300`,
+  gl:"https://api.coingecko.com/api/v3/simple/price?ids=tether,bitcoin,ethereum,polygon-ecosystem-token&vs_currencies=usd,krw&include_24hr_change=true",
+  up:"https://api.upbit.com/v1/ticker?markets=KRW-USDT,KRW-USDC,KRW-BTC,KRW-ETH,KRW-POL",
+  bi:"https://api.bithumb.com/public/ticker/USDT_KRW"
+};
+const FX_CHAIN=[
+  {url:"https://api.exchangerate.host/latest?base=USD&symbols=KRW",parse:d=>d?.rates?.KRW,name:"exchangerate.host"},
+  {url:"https://api.exchangeratesapi.io/latest?base=USD&symbols=KRW",parse:d=>d?.rates?.KRW,name:"exchangeratesapi.io"},
+  {url:"https://api.manana.kr/exchange/rate/KRW/KRW,USD.json",parse:d=>{if(Array.isArray(d)){const u=d.find(x=>x.name==='USDKRW=X');return u?.rate;}return null;},name:"manana.kr"},
+  {url:"https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.min.json",parse:d=>d?.usd?.krw,name:"fawazahmed0 (CDN)"},
+  {url:"https://latest.currency-api.pages.dev/v1/currencies/usd.min.json",parse:d=>d?.usd?.krw,name:"fawazahmed0 (mirror)"},
+  {url:"https://open.er-api.com/v6/latest/USD",parse:d=>d?.rates?.KRW,name:"open.er-api.com"},
+];
+
+// ─── helpers ───
+function $(id){return document.getElementById(id)}
+function pf(v){return parseFloat(v)||0}
+function fN(n,d=2){return n==null||isNaN(n)?'—':Number(n).toLocaleString('ko-KR',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function f$(n,d=2){return n==null||isNaN(n)?'—':'$'+fN(n,d)}
+function fW(n){return n==null||isNaN(n)?'—':'₩'+Math.round(n).toLocaleString('ko-KR')}
+function fP(n){if(n==null||isNaN(n))return'—';return(n>=0?'+':'')+fN(n)+'%'}
+function fC(n){return n==null||isNaN(n)?'var(--text-dim)':n>=0?'var(--neon)':'var(--danger)'}
+function fX(n){if(n==null||isNaN(n))return'—';if(n>=1e9)return'$'+fN(n/1e9,2)+'B';if(n>=1e6)return'$'+fN(n/1e6,1)+'M';if(n>=1e3)return'$'+fN(n/1e3,1)+'K';return'$'+fN(n)}
+function fNum(n){if(n==null||isNaN(n))return'—';if(n>=1e9)return fN(n/1e9,2)+'B';if(n>=1e6)return fN(n/1e6,2)+'M';if(n>=1e3)return fN(n/1e3,1)+'K';return fN(n,0)}
+
+// ─── pure compute (testable) ───
+function anubisPriceFromReserves(r0,r1){return (Number(r1)/Number(r0))*1e-9;} // r0=LGNS(9) r1=DAI(18), anchor $1
+function premiumPct(p,a){return (p&&a)?((a-p)/p)*100:null;}
+function valuate(hold,avg,price){const vU=hold*(price||0),cU=hold*avg;return{vU,cU,pnl:vU-cU,pct:cU>0?((vU-cU)/cU)*100:0};}
+function combinedUsd(){return Array.prototype.reduce.call(arguments,(a,v)=>a+(v&&v.vU||0),0);}
+
+function runSelfTests(){
+  let ok=true;const chk=(c,m)=>{if(!c){ok=false;console.error('SELFTEST FAIL:',m);}};
+  chk(Math.abs(anubisPriceFromReserves(36361161864700000n,147357506548200000000000000n)-4.0526)<0.01,'anubis price');
+  chk(Math.abs(premiumPct(3.34,4.05)-21.26)<0.1,'premium');
+  const v=valuate(100,3.0,4.0);chk(v.vU===400&&v.cU===300&&Math.abs(v.pct-33.33)<0.01,'valuate');
+  chk(combinedUsd({vU:400},{vU:100})===500,'combined');
+  console.log(ok?'✅ self-tests passed':'❌ self-tests failed');return ok;
+}
+
+// ─── data fetch ───
+async function fetchAnubis(){
+  try{
+    const body={jsonrpc:'2.0',id:1,method:'eth_call',params:[{to:ANU_POOL,data:'0x0902f1ac'},'latest']};
+    const r=await fetch(ANU_RPC,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+    const j=await r.json();if(!j.result)return;
+    const hex=j.result.slice(2);
+    const r0=BigInt('0x'+hex.slice(0,64)),r1=BigInt('0x'+hex.slice(64,128));
+    S.anu.reserve0=r0;S.anu.reserve1=r1;S.anu.price=anubisPriceFromReserves(r0,r1);S.anu.poolLgns=Number(r0)/1e9;S.anu.poolDai=Number(r1)/1e18;S.anu.ts=Math.floor(Date.now()/1000);
+  }catch(e){console.warn('anubis fetch',e);}
+}
+async function fetchAnuStats(){try{const r=await fetch(ANU_BS+'/stats');const j=await r.json();const c=parseFloat(j.coin_price);if(c)S.anu.native=c;}catch(e){}}
+// (Polygon 차트도 DexTools 위젯으로 통일 — GeckoTerminal OHLCV 자체렌더 제거)
+
+// ── 리베이스 (Polygon Staking 온체인 · 발행권한/Treasury 제외) ──
+// lgns_rebase_monitor.py 로직 이식: rate = epoch.distribute ÷ sLGNS.circulatingSupply
+//   다음 리베이스까지 = (epoch.endBlock − block) × 실측 블록타임(최근 120블록)
+const POLY_RPC=["https://polygon-rpc.com","https://polygon-bor-rpc.publicnode.com","https://polygon.drpc.org"];
+const STAKING="0x1964Ca90474b11FFD08af387b110ba6C96251Bfc";
+const SLGNS="0x99a57E6C8558BC6689f894e068733ADf83C19725";
+async function polyRpc(url,method,params){const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})});const j=await r.json();if(j.error)throw new Error(JSON.stringify(j.error));return j.result;}
+function rpcWords(hex){const h=hex.startsWith('0x')?hex.slice(2):hex;const o=[];for(let i=0;i<h.length;i+=64)o.push(BigInt('0x'+(h.slice(i,i+64)||'0')));return o;}
+async function fetchRebase(){
+  for(const url of POLY_RPC){
+    try{
+      const blockHex=await polyRpc(url,'eth_blockNumber',[]);const block=parseInt(blockHex,16);
+      const ew=rpcWords(await polyRpc(url,'eth_call',[{to:STAKING,data:'0x900cf0cf'},'latest']));
+      if(ew.length<4)throw new Error('epoch decode');
+      const endBlock=Number(ew[2]),distribute=ew[3];
+      let staked;
+      try{staked=BigInt(await polyRpc(url,'eth_call',[{to:SLGNS,data:'0x9358928b'},'latest']));if(staked===0n)throw new Error('0');}
+      catch(e){staked=BigInt(await polyRpc(url,'eth_call',[{to:SLGNS,data:'0x18160ddd'},'latest']));}
+      const bn=await polyRpc(url,'eth_getBlockByNumber',[blockHex,false]);
+      const bo=await polyRpc(url,'eth_getBlockByNumber',['0x'+(block-120).toString(16),false]);
+      let bt=(parseInt(bn.timestamp,16)-parseInt(bo.timestamp,16))/120;if(!(bt>=0.5&&bt<=10))bt=2.1;
+      const rate=staked>0n?Number(distribute)/Number(staked):0;
+      S.rebase={rate,secondsLeft:(endBlock-block)*bt,builtAt:Math.floor(Date.now()/1000),blocktime:bt,distribute:Number(distribute)/1e9,staked:Number(staked)/1e9,endBlock,block};
+      return;
+    }catch(e){/* 다음 엔드포인트 폴백 */}
+  }
+  console.warn('rebase: 모든 Polygon RPC 실패');
+}
+function renderRebase(){const r=S.rebase;if(!r||r.rate==null)return;$('rbRate').textContent=(r.rate>=0?'+':'')+(r.rate*100).toFixed(4)+'%';tickRebase();}
+function tickRebase(){const r=S.rebase,el=$('rbCd');if(!el||!r||r.secondsLeft==null||!r.builtAt)return;let left=r.secondsLeft-(Math.floor(Date.now()/1000)-r.builtAt);if(left<=0){el.textContent='임박';return;}const h=Math.floor(left/3600),m=Math.floor((left%3600)/60),s=Math.floor(left%60);el.textContent=(h>0?h+':':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');}
+// (Anubis 차트는 DexTools 위젯 임베드로 대체 — 자체 수집 sparkline 제거)
+
+async function go(){
+  const b=$('btnR');if(b){b.disabled=true;b.textContent='⏳';}
+  const [dR,gR,uR,bR]=await Promise.allSettled([
+    fetch(A.dex).then(r=>r.json()),fetch(A.gl).then(r=>r.json()),
+    fetch(A.up).then(r=>r.json()),fetch(A.bi).then(r=>r.json())
+  ]);
+  if(dR.status==='fulfilled'&&dR.value){const a=dR.value,p=Array.isArray(a)?(a.find(x=>x.quoteToken?.symbol==='DAI'&&x.dexId==='quickswap')||a[0]):null;
+    if(p){S.poly.price=parseFloat(p.priceUsd);S.poly.ch24=p.priceChange?.h24??null;S.poly.vol=p.volume?.h24??null;S.poly.liq=p.liquidity?.usd??null;S.poly.fdv=p.fdv??null;S.poly.poolDai=p.liquidity?.quote??null;S.poly.poolLgns=p.liquidity?.base??null;}}
+  S.fx.src='';
+  for(const fx of FX_CHAIN){try{const r=await fetch(fx.url);const d=await r.json();const v=fx.parse(d);if(v&&v>1000&&v<2000){S.fx.off=v;S.fx.src=fx.name;break;}}catch(e){}}
+  if(gR.status==='fulfilled'&&gR.value){const g=gR.value;
+    if(g.tether?.krw)S.uGl=g.tether.krw;
+    if(g.bitcoin)S.btc={u:g.bitcoin.usd,k:g.bitcoin.krw,up:S.btc.up,ch:g.bitcoin.usd_24h_change};
+    if(g.ethereum)S.eth={u:g.ethereum.usd,k:g.ethereum.krw,up:S.eth.up,ch:g.ethereum.usd_24h_change};
+    if(g['polygon-ecosystem-token']){const pt=g['polygon-ecosystem-token'];S.pol={u:pt.usd,k:pt.krw,up:S.pol.up,ch:pt.usd_24h_change};}}
+  if(uR.status==='fulfilled'&&Array.isArray(uR.value)){uR.value.forEach(t=>{
+    if(t.market==='KRW-USDT')S.fx.live=t.trade_price;if(t.market==='KRW-USDC')S.uUpC=t.trade_price;
+    if(t.market==='KRW-BTC')S.btc.up=t.trade_price;if(t.market==='KRW-ETH')S.eth.up=t.trade_price;if(t.market==='KRW-POL')S.pol.up=t.trade_price;});}
+  if(bR.status==='fulfilled'&&bR.value?.data?.closing_price)S.uBi=parseFloat(bR.value.data.closing_price);
+  await fetchAnubis();await fetchAnuStats();
+  S.cd=30;if(b){b.disabled=false;b.textContent='🔄 새로고침';}if($('lastU'))$('lastU').textContent=new Date().toLocaleTimeString('ko-KR');
+  uD();uP();uStk();
+  fetchRebase().then(renderRebase).catch(function(){});
+}
+
+// ─── charts ───
+let chartsMounted=false;
+const POLY_DEXT="https://www.dextools.io/widget-chart/en/polygon/pe-light/0x882df4b0fb50a229c3b4124eb18c759911485bfb?theme=dark&chartType=1&chartResolution=1&drawingToolbars=false";
+const ANU_DEXT="https://www.dextools.io/widget-chart/en/anubis/pe-light/0x32a4586797e3f561f41c0f47ca57ed08d64f3dc0?theme=dark&chartType=1&chartResolution=1&drawingToolbars=false";
+function dextIframe(url,title){return '<iframe src="'+url+'" loading="lazy" style="width:100%;height:100%;border:0;display:block" title="'+title+'"></iframe>';}
+function mountCharts(){if(chartsMounted)return;chartsMounted=true;
+  const p=$('polyChart'),a=$('anuChart');
+  if(p)p.innerHTML=dextIframe(POLY_DEXT,'Polygon LGNS/DAI DexTools 차트');
+  if(a)a.innerHTML=dextIframe(ANU_DEXT,'Anubis LGNS/DAI DexTools 차트');}
+
+// ─── render ───
+function uD(){
+  $('polyP').textContent=S.poly.price?f$(S.poly.price):'—';
+  const pc=$('polyC');pc.textContent=fP(S.poly.ch24);pc.style.color=fC(S.poly.ch24);
+  $('polyPoolL').textContent=S.poly.poolLgns!=null?fNum(S.poly.poolLgns)+' LGNS':'—';
+  $('polyPoolD').textContent=S.poly.poolDai!=null?fNum(S.poly.poolDai)+' DAI':'—';
+  $('anuP').textContent=S.anu.price?f$(S.anu.price):'—';
+  const pr=premiumPct(S.poly.price,S.anu.price);const pe=$('prem');
+  if(pr==null){pe.textContent='—';pe.className='badge-premium';}else{pe.textContent='Polygon 대비 '+(pr>=0?'▲':'▼')+' '+fP(pr);pe.className='badge-premium '+(pr>=0?'up':'down');}
+  $('anuR0').textContent=S.anu.poolLgns!=null?fNum(S.anu.poolLgns)+' LGNS':'—';
+  $('anuR1').textContent=S.anu.poolDai!=null?fNum(S.anu.poolDai)+' DAI':'—';
+  $('fxL').textContent=S.fx.live?fN(S.fx.live,0):'—';
+  $('fxO').textContent=S.fx.off?fN(S.fx.off,2):'—';
+  $('fxSrcEl').textContent=S.fx.src?'📡 '+S.fx.src:'⚠️ 소스 연결 실패';
+  $('uU').textContent=S.fx.live?fW(S.fx.live):'—';$('uB').textContent=S.uBi?fW(S.uBi):'—';
+  $('uC').textContent=S.uUpC?fW(S.uUpC):'—';$('uG').textContent=S.uGl?fW(S.uGl):'—';
+  const kp=S.fx.live&&S.uGl?((S.fx.live-S.uGl)/S.uGl)*100:null;const ke=$('KP');ke.textContent=fP(kp);ke.style.color=fC(kp);
+  const ud=S.fx.live&&S.uBi?S.fx.live-S.uBi:null;const ue=$('UB');ue.textContent=ud!=null?fW(ud):'—';ue.style.color=ud!=null&&ud>=0?'var(--neon)':'var(--danger)';
+  $('LkPoly').textContent=S.poly.price&&S.fx.live?fW(S.poly.price*S.fx.live):'—';
+  $('LkAnu').textContent=S.anu.price&&S.fx.live?fW(S.anu.price*S.fx.live):'—';
+  sC('btc',S.btc);sC('eth',S.eth);sC('pol',S.pol);
+}
+function sC(id,d){if(!d)return;$(id+'U').textContent=d.u?f$(d.u,d.u>=100?0:2):'—';const c=$(id+'C');c.textContent=fP(d.ch);c.style.color=fC(d.ch);
+  $(id+'K').textContent=d.k?fW(d.k):'—';$(id+'Up').textContent=d.up?'업비트 '+fW(d.up):'업비트 —';}
+
+function uP(){
+  ['poly','anu'].forEach(ch=>{S.assets[ch].hold=pf($('iH_'+ch).value);S.assets[ch].avg=pf($('iA_'+ch).value);
+    try{localStorage.setItem('lh_'+ch,S.assets[ch].hold);localStorage.setItem('la_'+ch,S.assets[ch].avg);}catch(e){}});
+  const vp=valuate(S.assets.poly.hold,S.assets.poly.avg,S.poly.price);
+  const va=valuate(S.assets.anu.hold,S.assets.anu.avg,S.anu.price);
+  const fx=S.fx.live||0,totU=combinedUsd(vp,va),totC=vp.cU+va.cU,totPnl=totU-totC,totPct=totC>0?(totPnl/totC)*100:0;
+  $('totU').textContent=f$(totU);$('totK').textContent=fW(totU*fx);
+  const tp=$('totPnl');tp.textContent=f$(totPnl);tp.style.color=fC(totPnl);
+  const tpc=$('totPct');tpc.textContent=fP(totPct);tpc.style.color=fC(totPct);
+  setAsset('Poly',vp,S.assets.poly.hold);setAsset('Anu',va,S.assets.anu.hold);
+}
+function setAsset(sfx,v,hold){$('h'+sfx).textContent=fN(hold,2);$('v'+sfx).textContent=f$(v.vU);
+  const p=$('p'+sfx);p.textContent=f$(v.pnl);p.style.color=fC(v.pnl);
+  const r=$('r'+sfx);r.textContent=fP(v.pct);r.style.color=fC(v.pct);}
+
+function sStk(){S.stkQ=pf($('stkQ').value);S.stkW=pf($('stkW').value);try{localStorage.setItem('sq',S.stkQ);localStorage.setItem('sw',S.stkW);}catch(e){}uStk();}
+function uStk(){const el=$('stkRes');if(!S.stkQ||!S.poly.price){el.innerHTML='';return;}
+  const curQ=S.assets.poly.hold||S.stkQ;const fx=S.fx.live||0;const price=S.poly.price;
+  const curValU=curQ*price,curValK=curValU*fx;const earnedQ=curQ-S.stkQ;
+  const pctQ=S.stkQ>0?((curQ-S.stkQ)/S.stkQ)*100:0;const pctK=S.stkW>0?((curValK-S.stkW)/S.stkW)*100:0;
+  el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;text-align:center">
+    <div><div class="sl">시작 수량</div><div class="svl">${fN(S.stkQ,2)}</div></div>
+    <div><div class="sl">현재 수량</div><div class="svl ca">${fN(curQ,2)}</div></div>
+    <div><div class="sl">증가 토큰</div><div class="svl" style="color:${fC(earnedQ)}">${earnedQ>=0?'+':''}${fN(earnedQ,4)}</div></div>
+    <div><div class="sl">토큰 증가율</div><div class="svl" style="color:${fC(pctQ)}">${fP(pctQ)}</div></div>
+    <div><div class="sl">현재 가치(USD)</div><div class="svl cg">${f$(curValU)}</div></div>
+    <div><div class="sl">현재 가치(KRW)</div><div class="svl cg">${fW(curValK)}</div></div>
+    ${S.stkW?`<div><div class="sl">투자원금(KRW)</div><div class="svl">${fW(S.stkW)}</div></div>
+    <div><div class="sl">원화 수익률</div><div class="svl" style="color:${fC(pctK)}">${fP(pctK)}</div></div>`:''}
+  </div>`;}
+
+let calcChain='poly';
+function setCalcChain(c){calcChain=c;$('cc_poly').classList.toggle('on',c==='poly');$('cc_anu').classList.toggle('on',c==='anu');doCalc();}
+function doCalc(){const w=pf($('calcW').value),fx=S.fx.live||0,p=S[calcChain].price||0;
+  if(!w||!fx||!p){$('calcR').textContent='— LGNS';return;}
+  const qty=(w/fx)/p;$('calcR').textContent=fN(qty,4)+' LGNS';
+  $('calcFx').textContent=fW(fx);$('calcP').textContent=f$(p)+' ('+(calcChain==='poly'?'Polygon':'Anubis')+')';
+  $('calcT').textContent='계산 시점: '+new Date().toLocaleString('ko-KR');}
+
+function nowStr(){return new Date().toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});}
+function rec(){if(!S.poly.price&&!S.anu.price)return;const fx=S.fx.live||0;
+  [['poly',S.poly.price,S.assets.poly.hold],['anu',S.anu.price,S.assets.anu.hold]].forEach(([ch,price,hold])=>{
+    if(!price)return;const vU=hold*price,vK=vU*fx;S.ledger.push({d:nowStr(),chain:ch,p:price,fx,h:hold,vU,vK});});
+  try{localStorage.setItem('ll',JSON.stringify(S.ledger));}catch(e){}rL();}
+function clr(){if(!confirm('기록을 모두 삭제할까요?'))return;S.ledger=[];try{localStorage.setItem('ll','[]');}catch(e){}rL();}
+function rL(){const tb=$('lB'),n=S.ledger.length;$('lC').textContent=n;$('bCl').classList.toggle('hid',n===0);
+  if(!n){tb.innerHTML='<tr><td colspan="8" style="padding:40px;text-align:center;color:var(--text-faint)">아직 기록이 없습니다.</td></tr>';return;}
+  let h='';for(let i=n-1;i>=0;i--){const e=S.ledger[i];const cl=e.chain==='anu'?'ca':'cg';const cn=e.chain==='anu'?'𓁢 ANU':'⬡ POL';
+    h+=`<tr><td>${i+1}</td><td style="white-space:nowrap;font-size:10px">${e.d}</td><td class="${cl}">${cn}</td><td>${f$(e.p)}</td><td>${fN(e.fx,0)}</td><td>${fN(e.h,2)}</td><td class="cg">${f$(e.vU)}</td><td class="cg">${fW(e.vK)}</td></tr>`;}
+  tb.innerHTML=h;}
+
+function sw(t){document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.dataset.t===t));['s','a','r','c'].forEach(k=>$('t-'+k).classList.toggle('hid',k!==t));
+  if(t==='s'){mountCharts();}}
+
+function ld(){try{
+    if(localStorage.getItem('lh')&&!localStorage.getItem('lh_poly')){localStorage.setItem('lh_poly',localStorage.getItem('lh'));localStorage.setItem('la_poly',localStorage.getItem('la')||'0');}
+    S.assets.poly.hold=parseFloat(localStorage.getItem('lh_poly'))||0;S.assets.poly.avg=parseFloat(localStorage.getItem('la_poly'))||0;
+    S.assets.anu.hold=parseFloat(localStorage.getItem('lh_anu'))||0;S.assets.anu.avg=parseFloat(localStorage.getItem('la_anu'))||0;
+    S.stkQ=parseFloat(localStorage.getItem('sq'))||0;S.stkW=parseFloat(localStorage.getItem('sw'))||0;
+    const l=localStorage.getItem('ll');if(l){S.ledger=JSON.parse(l);S.ledger.forEach(e=>{if(!e.chain)e.chain='poly';});}
+  }catch(e){}
+  $('iH_poly').value=S.assets.poly.hold||'';$('iA_poly').value=S.assets.poly.avg||'';
+  $('iH_anu').value=S.assets.anu.hold||'';$('iA_anu').value=S.assets.anu.avg||'';
+  $('stkQ').value=S.stkQ||'';$('stkW').value=S.stkW||'';}
+
+setInterval(()=>{S.cd=Math.max(0,S.cd-1);if($('cd'))$('cd').textContent=`(${S.cd}s)`;},1000);
+setInterval(go,30000);
+setInterval(tickRebase,1000);
+ld();rL();runSelfTests();go();setTimeout(mountCharts,1000);
+</script>
+</body>
+</html>

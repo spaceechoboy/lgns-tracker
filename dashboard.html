@@ -71,8 +71,8 @@ body{background:var(--bg-0);color:var(--text);font-family:'Pretendard','Apple SD
 .kv .krw-sm{font-size:10px;color:var(--text-faint);font-weight:400;margin-left:5px}
 .bc-foot{font-size:10px;color:var(--text-faint);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* ── 모바일/세로/짧은 화면: 자동회전 대응 — 스크롤 허용 + 세로 스택 + 편안한 크기 ── */
-@media (max-width:920px), (orientation:portrait){
+/* ── 세로(portrait): 세로 스택 + 스크롤 ── */
+@media (orientation:portrait){
   html,body{overflow:auto}
   .dash{height:auto;min-height:100dvh;padding:10px;gap:10px}
   .topbar{flex-wrap:wrap;gap:10px}
@@ -84,10 +84,17 @@ body{background:var(--bg-0);color:var(--text);font-family:'Pretendard','Apple SD
   .ps-right{gap:14px}
   .bottom{grid-template-columns:repeat(2,1fr)}
 }
-@media (max-width:520px){
+@media (orientation:portrait) and (max-width:520px){
   .bottom{grid-template-columns:1fr}
   .pv{font-size:30px}
   .rb-val{font-size:18px}
+}
+/* ── 가로(landscape)·낮은 화면(폰 가로): 16:9 2열 유지 + 스크롤 허용(클리핑 방지) ── */
+@media (orientation:landscape) and (max-height:560px){
+  html,body{overflow:auto}
+  .dash{height:auto;min-height:100dvh}
+  .topbar{flex-wrap:wrap;gap:8px}
+  .chart-card{flex:0 0 auto;height:60vh;min-height:200px}
 }
 </style>
 <link rel="manifest" href="dashboard.webmanifest">

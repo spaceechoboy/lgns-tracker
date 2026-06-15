@@ -1,7 +1,7 @@
 {
   "id": "./index.html",
-  "name": "Origin LGNS Dual-Chain Tracker",
-  "short_name": "LGNS Tracker",
+  "name": "LGNS DualChain Tracker",
+  "short_name": "LGNS Track",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
